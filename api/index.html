@@ -1,0 +1,1618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Circle Theorems - Interactive App</title>
+    <style>
+        :root {
+            --primary-color: #1565c0;
+            --secondary-color: #c62828;
+            --highlight-color: #ff8f00;
+            --light-gray: #f5f5f5;
+            --medium-gray: #e0e0e0;
+            --dark-gray: #424242;
+            --text-color: #212121;
+            --success-color: #4caf50;
+            --error-color: #f44336;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            background-color: var(--light-gray);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            padding: 1.5rem;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            color: var(--primary-color);
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            color: var(--dark-gray);
+            margin-bottom: 1rem;
+        }
+
+        h3 {
+            font-size: 1.2rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--medium-gray);
+        }
+
+        .tab {
+            padding: 0.75rem 1.5rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1rem;
+            color: var(--dark-gray);
+            transition: all 0.3s ease;
+            border-bottom: 4px solid transparent;
+            transform: translateY(2px);
+        }
+
+        .tab:hover {
+            color: var(--primary-color);
+        }
+
+        .tab.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Layout */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2.5rem;
+            align-items: start;
+        }
+
+        .diagram-container {
+            position: sticky;
+            top: 1rem;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+            user-select: none;
+            background-color: #fdfdfd;
+            border-radius: 8px;
+            cursor: default;
+        }
+
+        .intro-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .theorem-box {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-left: 4px solid var(--primary-color);
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .theorem-box:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+        }
+
+        .theorem-box h3 {
+            color: var(--primary-color);
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+        }
+
+        .theorem-box p {
+            margin-bottom: 0.8rem;
+            line-height: 1.7;
+        }
+
+        .theorem-box strong {
+            color: var(--secondary-color);
+        }
+
+        /* SVG Elements */
+        .key-arc-highlight {
+            stroke: var(--secondary-color);
+            stroke-width: 6;
+            stroke-linecap: round;
+            fill: none;
+            animation: pulse 1.5s infinite ease-in-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% { stroke-width: 5; opacity: 1; }
+            50% { stroke-width: 8; opacity: 0.7; }
+        }
+
+        .unknown-angle-highlight {
+            stroke: var(--highlight-color);
+            stroke-width: 4;
+        }
+
+        /* Practice Tab */
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .angle-input {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .angle-input label {
+            font-weight: bold;
+            justify-self: end;
+        }
+
+        .angle-input input {
+            padding: 0.75rem;
+            border: 2px solid var(--medium-gray);
+            border-radius: 4px;
+            font-size: 1.1rem;
+            transition: border-color 0.2s ease;
+            width: 100%;
+        }
+
+        .angle-input input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.1);
+        }
+
+        .angle-input input.error {
+            border-color: var(--error-color);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        .button-group button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .button-group button:first-child {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .button-group button:first-child:hover {
+            background: #45a049;
+            transform: translateY(-1px);
+        }
+
+        .button-group button:last-child {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .button-group button:last-child:hover {
+            background: #1565c0;
+            transform: translateY(-1px);
+        }
+
+        .feedback {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border-radius: 4px;
+            text-align: center;
+            font-weight: bold;
+            min-height: 50px;
+        }
+
+        .feedback.success {
+            background: #e8f5e9;
+            color: var(--success-color);
+        }
+
+        .feedback.error {
+            background: #ffebee;
+            color: var(--error-color);
+        }
+
+        /* Builder Styles */
+        .builder-intro-box {
+            background-color: #e3f2fd;
+            border-left: 4px solid var(--primary-color);
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            border-radius: 8px;
+        }
+
+        .builder-intro-box p {
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .toolbox-section {
+            background-color: var(--light-gray);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .toolbox-section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--medium-gray);
+        }
+
+        .toolbox-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 0.5rem;
+        }
+
+        .tool-btn {
+            padding: 0.75rem 1rem;
+            background: #fff;
+            color: var(--dark-gray);
+            border: 2px solid var(--medium-gray);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            text-align: center;
+            transition: all 0.2s ease;
+            min-height: 60px;
+        }
+
+        .tool-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-color: var(--primary-color);
+        }
+
+        .tool-btn.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        .tool-btn:disabled {
+            background: #e0e0e0;
+            color: #9e9e9e;
+            cursor: not-allowed;
+            transform: none;
+            opacity: 0.6;
+        }
+
+        .ai-section {
+            background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .ai-btn {
+            background: #6a1b9a;
+            color: white;
+            padding: 0.75rem 1.25rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            width: 100%;
+        }
+
+        .ai-btn:hover {
+            background: #8e24aa;
+            transform: translateY(-1px);
+        }
+
+        .problem-info {
+            background-color: var(--light-gray);
+            padding: 1rem;
+            border-radius: 8px;
+            min-height: 80px;
+            margin-top: 1rem;
+        }
+
+        .question-box {
+            background-color: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 1rem;
+            margin-top: 1rem;
+            border-radius: 8px;
+            min-height: 50px;
+        }
+
+        /* Builder SVG */
+        .builder-arc {
+            stroke: var(--secondary-color);
+            stroke-width: 6;
+            stroke-linecap: round;
+            fill: none;
+        }
+
+        .selected-outline {
+            stroke: var(--secondary-color) !important;
+            stroke-width: 5px !important;
+            opacity: 1 !important;
+        }
+
+        .selectable:hover {
+            stroke-width: 8px !important;
+            opacity: 0.7;
+            cursor: pointer;
+        }
+
+        .draggable-point:hover {
+            cursor: move;
+        }
+
+        .point-label {
+            font-family: sans-serif;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .feature-label {
+            font-family: sans-serif;
+            font-size: 16px;
+            font-weight: bold;
+            fill: var(--dark-gray);
+        }
+
+        .challenge-textarea {
+            padding: 0.75rem;
+            border: 2px solid var(--medium-gray);
+            border-radius: 4px;
+            font-size: 1rem;
+            width: 100%;
+            resize: vertical;
+        }
+
+        @media (max-width: 900px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+            .diagram-container {
+                position: static;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Circle Theorems Interactive</h1>
+        <div class="tabs">
+            <button class="tab active" data-tab="intro">Introduction</button>
+            <button class="tab" data-tab="practice">Practice Problems</button>
+            <button class="tab" data-tab="create">Problem Builder</button>
+        </div>
+        <div id="intro" class="tab-content active"></div>
+        <div id="practice" class="tab-content"></div>
+        <div id="create" class="tab-content"></div>
+    </div>
+
+    <script>
+    // Initialize app when DOM is ready
+    const App = {
+        SVG_NS: "http://www.w3.org/2000/svg",
+        CX: 200,
+        CY: 200,
+        R: 150,
+        introAnimationTimer: null,
+        practiceProblem: null,
+        builderState: {},
+        activeTool: 'add_point',
+        selectionState: { points: [], features: [] },
+        builderHistory: [],
+        draggedPointId: null,
+        wasDragged: false,
+        lastProblemDescription: '',
+        lastUserAnswers: {},
+        lastAiResponse: '',
+        clickTimeout: null
+    };
+
+    // Utility functions
+    const toRad = deg => deg * Math.PI / 180;
+    const toDeg = rad => rad * 180 / Math.PI;
+    const polarToCartesian = (angleDeg, radius = App.R) => ({
+        x: App.CX + radius * Math.cos(toRad(angleDeg)),
+        y: App.CY + radius * Math.sin(toRad(angleDeg))
+    });
+    const cartesianToAngle = p => (toDeg(Math.atan2(p.y - App.CY, p.x - App.CX)) + 360) % 360;
+
+    const createSvgElement = (tag, attributes) => {
+        const el = document.createElementNS(App.SVG_NS, tag);
+        Object.keys(attributes).forEach(key => el.setAttribute(key, attributes[key]));
+        return el;
+    };
+
+    const getAngle = (p1, pv, p2) => {
+        const v1 = { x: p1.x - pv.x, y: p1.y - pv.y };
+        const v2 = { x: p2.x - pv.x, y: p2.y - pv.y };
+        const dot = v1.x * v2.x + v1.y * v2.y;
+        const mag1 = Math.sqrt(v1.x**2 + v1.y**2);
+        const mag2 = Math.sqrt(v2.x**2 + v2.y**2);
+        if (mag1 === 0 || mag2 === 0) return 0;
+        const acosVal = Math.max(-1, Math.min(1, dot / (mag1 * mag2)));
+        return toDeg(Math.acos(acosVal));
+    };
+
+    const getAngleArcPath = (pVertex, p1, p2, arcRadius) => {
+        const angle = getAngle(p1, pVertex, p2);
+        if (isNaN(angle) || angle === 0 || angle >= 180) return '';
+        const v1 = { x: p1.x - pVertex.x, y: p1.y - pVertex.y };
+        const v2 = { x: p2.x - pVertex.x, y: p2.y - pVertex.y };
+        const startAngle = Math.atan2(v1.y, v1.x);
+        const endAngle = Math.atan2(v2.y, v2.x);
+        const start = { x: pVertex.x + arcRadius * Math.cos(startAngle), y: pVertex.y + arcRadius * Math.sin(startAngle) };
+        const end = { x: pVertex.x + arcRadius * Math.cos(endAngle), y: pVertex.y + arcRadius * Math.sin(endAngle) };
+        const sweepFlag = (v1.x * v2.y - v1.y * v2.x) > 0 ? 1 : 0;
+        return `M ${start.x} ${start.y} A ${arcRadius} ${arcRadius} 0 0 ${sweepFlag} ${end.x} ${end.y}`;
+    };
+
+    const getAngleBisectorPosition = (pv, pA, pB, distance) => {
+        const v1 = { x: pA.x - pv.x, y: pA.y - pv.y };
+        const v2 = { x: pB.x - pv.x, y: pB.y - pv.y };
+        const mag1 = Math.sqrt(v1.x**2 + v1.y**2);
+        const u1 = { x: v1.x / mag1, y: v1.y / mag1 };
+        const mag2 = Math.sqrt(v2.x**2 + v2.y**2);
+        const u2 = { x: v2.x / mag2, y: v2.y / mag2 };
+        const bisectorVec = { x: u1.x + u2.x, y: u1.y + u2.y };
+        const magB = Math.sqrt(bisectorVec.x**2 + bisectorVec.y**2);
+        if (magB < 0.001) return pv;
+        const uB = { x: bisectorVec.x / magB, y: bisectorVec.y / magB };
+        return { x: pv.x + uB.x * distance, y: pv.y + uB.y * distance };
+    };
+
+    // Tab switching
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelector(`.tab[data-tab='${tabId}']`).classList.add('active');
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        
+        stopIntroAnimation();
+        
+        if (tabId === 'intro') initIntro();
+        else if (tabId === 'practice') initPractice();
+        else if (tabId === 'create') initBuilder();
+    }
+
+    // Intro tab
+    function initIntro() {
+        const content = document.getElementById('intro');
+        content.innerHTML = `
+            <div class="main-layout">
+                <div class="intro-content">
+                    <div class="theorem-box">
+                        <h3>The Core Idea</h3>
+                        <p>Most circle theorems relate angles to the <strong>arc</strong> they subtend. The key is to find the arc first!</p>
+                    </div>
+                    <div class="theorem-box">
+                        <h3>Key Theorems</h3>
+                        <p><strong>Central Angle:</strong> The angle at the centre is double the angle at the circumference from the same arc.</p>
+                        <p><strong>Alternate Segment:</strong> The angle between a tangent and a chord equals the angle in the alternate segment.</p>
+                    </div>
+                </div>
+                <div class="diagram-container">
+                    <svg viewBox="0 0 400 400" id="introSvg"></svg>
+                </div>
+            </div>
+        `;
+        
+        const introSvg = document.getElementById('introSvg');
+        let angleDeg = 0;
+        
+        App.introAnimationTimer = setInterval(() => {
+            angleDeg = (angleDeg + 1) % 360;
+            const arcSpan = 120 + 40 * Math.sin(toRad(angleDeg * 2));
+            drawStandardProblem(introSvg, arcSpan, { center: '2θ', circumference: 'θ', tangent: 'θ' });
+        }, 50);
+    }
+
+    function stopIntroAnimation() {
+        if (App.introAnimationTimer) {
+            clearInterval(App.introAnimationTimer);
+            App.introAnimationTimer = null;
+        }
+    }
+
+    function drawStandardProblem(svg, arcSpan, opts = {}) {
+        if (!svg) return;
+        svg.innerHTML = '';
+        
+        const p1 = polarToCartesian(180 - arcSpan / 2);
+        const p2 = polarToCartesian(180 + arcSpan / 2);
+        const p3 = polarToCartesian(0);
+        const largeArc = arcSpan > 180 ? 1 : 0;
+        
+        svg.appendChild(createSvgElement('path', {
+            d: `M ${p1.x} ${p1.y} A ${App.R} ${App.R} 0 ${largeArc} 1 ${p2.x} ${p2.y}`,
+            class: 'key-arc-highlight'
+        }));
+        
+        const tanP = p2;
+        const tanVec = { x: -(tanP.y - App.CY), y: (tanP.x - App.CX) };
+        const pTangentNearSide = {x: tanP.x - tanVec.x * 0.5, y: tanP.y - tanVec.y * 0.5};
+        const pTangentFarSide = {x: tanP.x + tanVec.x * 0.5, y: tanP.y + tanVec.y * 0.5};
+        
+        // Draw lines
+        [
+            { x1: App.CX, y1: App.CY, x2: p1.x, y2: p1.y },
+            { x1: App.CX, y1: App.CY, x2: p2.x, y2: p2.y },
+            { x1: p1.x, y1: p1.y, x2: p3.x, y2: p3.y },
+            { x1: p2.x, y1: p2.y, x2: p3.x, y2: p3.y },
+            { x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y },
+            { x1: pTangentNearSide.x, y1: pTangentNearSide.y, x2: pTangentFarSide.x, y2: pTangentFarSide.y }
+        ].forEach(coords => svg.appendChild(createSvgElement('line', { ...coords, stroke: '#424242', 'stroke-width': 2 })));
+        
+        // Draw angles
+        const drawAngle = (pv, pA, pB, color, text, highlight) => {
+            const arcRadius = 30;
+            const pathData = getAngleArcPath(pv, pA, pB, arcRadius);
+            if (!pathData) return;
+            
+            const arc = createSvgElement('path', {
+                d: pathData,
+                fill: 'none',
+                stroke: color,
+                'stroke-width': 2
+            });
+            if (highlight) arc.classList.add('unknown-angle-highlight');
+            svg.appendChild(arc);
+            
+            if (text) {
+                const textPos = getAngleBisectorPosition(pv, pA, pB, arcRadius + 15);
+                const angleText = createSvgElement('text', {
+                    x: textPos.x,
+                    y: textPos.y,
+                    fill: color,
+                    'font-size': 18,
+                    'font-weight': 'bold',
+                    'text-anchor': 'middle',
+                    dy: '.3em'
+                });
+                angleText.textContent = text;
+                svg.appendChild(angleText);
+            }
+        };
+        
+        drawAngle({x:App.CX,y:App.CY}, p1, p2, 'var(--primary-color)', opts.center, opts.highlight?.includes('center'));
+        drawAngle(p3, p1, p2, 'var(--primary-color)', opts.circumference, opts.highlight?.includes('circumference'));
+        drawAngle(p2, p1, pTangentNearSide, 'var(--primary-color)', opts.tangent, opts.highlight?.includes('tangent'));
+        
+        svg.appendChild(createSvgElement('circle', {
+            cx: App.CX,
+            cy: App.CY,
+            r: App.R,
+            fill: 'none',
+            stroke: '#ccc',
+            'stroke-width': 2
+        }));
+    }
+
+    // Practice tab
+    function initPractice() {
+        const content = document.getElementById('practice');
+        content.innerHTML = `
+            <div class="main-layout">
+                <div class="problem-area" id="practice-problem-area"></div>
+                <div class="diagram-container">
+                    <svg viewBox="0 0 400 400" id="practiceSvg"></svg>
+                </div>
+            </div>
+        `;
+        
+        if (!App.practiceProblem) generatePracticeProblem();
+        else renderCurrentPracticeProblem();
+    }
+
+    function generatePracticeProblem() {
+        const centerAngle = Math.floor(Math.random() * 50 + 20) * 2;
+        const givenType = ['center', 'circumference', 'tangent'][Math.floor(Math.random() * 3)];
+        App.practiceProblem = {
+            center: centerAngle,
+            circumference: centerAngle / 2,
+            tangent: centerAngle / 2,
+            given: givenType
+        };
+        renderCurrentPracticeProblem();
+    }
+
+    function renderCurrentPracticeProblem() {
+        if (!App.practiceProblem) return;
+        
+        const practiceSvg = document.getElementById('practiceSvg');
+        const labels = { [App.practiceProblem.given]: `${App.practiceProblem[App.practiceProblem.given].toFixed(1)}°` };
+        const unknownTypes = Object.keys(App.practiceProblem).filter(k => k !== 'given' && k !== App.practiceProblem.given);
+        
+        drawStandardProblem(practiceSvg, App.practiceProblem.center, { ...labels, highlight: unknownTypes });
+        
+        const area = document.getElementById('practice-problem-area');
+        area.innerHTML = `
+            <h3>Find the missing angles</h3>
+            <p>One angle is given. Find the others based on the highlighted elements.</p>
+            <div class="input-group">
+                ${Object.keys(App.practiceProblem).filter(k=>k!=='given').map(type => `
+                    <div class="angle-input">
+                        <label for="practice_${type}">${type.charAt(0).toUpperCase() + type.slice(1)} Angle</label>
+                        <input type="number" id="practice_${type}" placeholder="Angle in degrees">
+                    </div>
+                `).join('')}
+            </div>
+            <div class="button-group">
+                <button id="checkAnswerBtn">✓ Check Answer</button>
+                <button id="newProblemBtn">🔄 New Problem</button>
+            </div>
+            <div id="feedback" class="feedback"></div>
+        `;
+        
+        document.getElementById('checkAnswerBtn').onclick = checkPracticeAnswer;
+        document.getElementById('newProblemBtn').onclick = generatePracticeProblem;
+    }
+
+    function checkPracticeAnswer() {
+        let allCorrect = true;
+        Object.keys(App.practiceProblem).forEach(type => {
+            if (type === 'given') return;
+            const input = document.getElementById(`practice_${type}`);
+            if (!input) return;
+            const userValue = parseFloat(input.value);
+            if (isNaN(userValue) || Math.abs(userValue - App.practiceProblem[type]) > 0.5) {
+                allCorrect = false;
+                input.classList.add('error');
+            } else {
+                input.classList.remove('error');
+            }
+        });
+        
+        const feedbackEl = document.getElementById('feedback');
+        feedbackEl.className = 'feedback';
+        if (allCorrect) {
+            feedbackEl.classList.add('success');
+            feedbackEl.textContent = '🎉 Correct! Well done!';
+        } else {
+            feedbackEl.classList.add('error');
+            feedbackEl.textContent = 'Not quite. Check the highlighted fields.';
+        }
+    }
+
+    // Builder tab
+    function initBuilder() {
+        const content = document.getElementById('create');
+        content.innerHTML = `
+            <div class="main-layout">
+                <div class="controls">
+                    <h2>Problem Builder</h2>
+                    <div class="builder-intro-box">
+                        <p>Welcome to the Problem Builder! You can:</p>
+                        <ul>
+                            <li><strong>Build a diagram from scratch</strong> using the tools below.</li>
+                            <li><strong>Upload an image</strong> of a problem for the AI to analyze and recreate.</li>
+                            <li>Set <strong>known values</strong> and mark angles/lengths as <strong>unknowns</strong> to solve.</li>
+                            <li>Use the <strong>AI Checker</strong> to verify if your problem is solvable and check your answers.</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="toolbox-section">
+                        <div class="toolbox-section-title">📐 Basic Drawing Tools</div>
+                        <div class="toolbox-grid">
+                            <button class="tool-btn" data-tool="upload_image">🖼️ Upload Problem</button>
+                            <button class="tool-btn" data-tool="add_point">📌 Add Point</button>
+                            <button class="tool-btn" data-tool="draw_line">━ Line/Chord</button>
+                            <button class="tool-btn" data-tool="draw_radius">◐ Radius</button>
+                            <button class="tool-btn" data-tool="draw_tangent">⟂ Tangent at Point</button>
+                            <button class="tool-btn" data-tool="define_arc">⌒ Arc</button>
+                        </div>
+                    </div>
+                    
+                    <div class="toolbox-section">
+                        <div class="toolbox-section-title">🔧 Construction Tools</div>
+                        <div class="toolbox-grid">
+                            <button class="tool-btn" data-tool="define_angle_3pt">∠ Angle (3 Points)</button>
+                            <button class="tool-btn" data-tool="define_angle_vtx">∠ Angle (Vertex)</button>
+                            <button class="tool-btn" data-tool="tangent_from_point">⟂ Tangent from Point</button>
+                            <button class="tool-btn" data-tool="draw_perpendicular">⊥ Perpendicular</button>
+                            <button class="tool-btn" data-tool="draw_parallel">∥ Parallel</button>
+                            <button class="tool-btn" data-tool="extend_line">↔ Extend Line</button>
+                        </div>
+                    </div>
+                    
+                    <div class="toolbox-section">
+                        <div class="toolbox-section-title">✏️ Marking & Constraints</div>
+                        <div class="toolbox-grid">
+                            <button class="tool-btn" data-tool="mark_equal">= Mark Equal</button>
+                            <button class="tool-btn" data-tool="mark_parallel">∥ Mark Parallel</button>
+                            <button class="tool-btn" data-tool="mark_perp">⊥ Mark Perpendicular</button>
+                            <button class="tool-btn" data-tool="set_known" disabled>✓ Set Known</button>
+                            <button class="tool-btn" data-tool="set_unknown" disabled>? Set Unknown</button>
+                            <button class="tool-btn" data-tool="flip_arc" disabled>↻ Flip Arc</button>
+                        </div>
+                    </div>
+                    
+                    <div class="toolbox-section">
+                        <div class="toolbox-section-title">📊 Problem Management</div>
+                        <div class="toolbox-grid">
+                            <button class="tool-btn" data-tool="undo">↩ Undo</button>
+                            <button class="tool-btn" data-tool="remove" disabled>🗑️ Remove</button>
+                            <button class="tool-btn" data-tool="export_png">💾 Export PNG</button>
+                        </div>
+                    </div>
+                    
+                    <div class="ai-section">
+                        <div style="font-size: 1.1rem; font-weight: 600; color: #6a1b9a; margin-bottom: 0.75rem;">
+                            🤖 AI Assistant (Powered by Claude)
+                        </div>
+                        <button class="ai-btn" id="checkSolvabilityBtn">
+                            🔍 Check Solvability & Get Solution
+                        </button>
+                    </div>
+                    
+                    <input type="file" id="imageUpload" accept="image/*" style="display: none;">
+                    <div class="question-box" id="questionBox"></div>
+                    <div class="problem-info" id="createInfo"></div>
+                </div>
+                <div class="diagram-container">
+                    <svg viewBox="0 0 400 400" id="createSvg"></svg>
+                </div>
+            </div>
+        `;
+        
+        resetBuilderState();
+        setupBuilderEventListeners();
+        setActiveTool('add_point');
+    }
+
+    function resetBuilderState() {
+        App.builderState = {
+            points: { 'p_center': { id: 'p_center', name: 'O', onCircle: false, x: App.CX, y: App.CY } },
+            features: {},
+            problem: { knowns: {}, unknowns: {} },
+            constraints: {}
+        };
+        App.builderHistory = [];
+        App.selectionState = { points: [], features: [] };
+    }
+
+    function setupBuilderEventListeners() {
+        // Tool buttons
+        document.querySelectorAll('.tool-btn').forEach(btn => {
+            btn.addEventListener('click', handleToolClick);
+        });
+
+        // AI button
+        const aiBtn = document.getElementById('checkSolvabilityBtn');
+        if (aiBtn) {
+            aiBtn.addEventListener('click', checkSolvability);
+        }
+
+        // Image upload
+        const imageUpload = document.getElementById('imageUpload');
+        if (imageUpload) {
+            imageUpload.addEventListener('change', handleImageUpload);
+        }
+
+        // SVG interactions
+        const svg = document.getElementById('createSvg');
+        if (svg) {
+            svg.addEventListener('click', handleBuilderClick);
+            svg.addEventListener('dblclick', handleBuilderDblClick);
+            svg.addEventListener('mousedown', handleDragStart);
+            svg.addEventListener('mousemove', handleDrag);
+            window.addEventListener('mouseup', handleDragEnd);
+        }
+    }
+
+    function handleToolClick(e) {
+        const tool = e.currentTarget.dataset.tool;
+        if (!tool) return;
+        
+        if (tool === 'undo') {
+            undoLastStep();
+        } else if (tool === 'remove') {
+            removeSelectedItems();
+        } else if (tool === 'export_png') {
+            exportAsPNG();
+        } else if (tool === 'set_known') {
+            if (App.selectionState.features.length === 1) {
+                promptForValue(App.selectionState.features[0]);
+            }
+        } else if (tool === 'set_unknown') {
+            setFeatureAsUnknown();
+        } else if (tool === 'flip_arc') {
+            flipSelectedArc();
+        } else if (tool === 'upload_image') {
+            document.getElementById('imageUpload').click();
+        } else {
+            setActiveTool(tool);
+        }
+    }
+
+    function setActiveTool(tool) {
+        App.activeTool = tool;
+        App.selectionState = { points: [], features: [] };
+        document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+        const currentToolBtn = document.querySelector(`.tool-btn[data-tool="${tool}"]`);
+        if(currentToolBtn) currentToolBtn.classList.add('active');
+        updateBuilderUI();
+    }
+
+    // Builder functions (simplified versions of the originals)
+    function getPointCoordsById(pointId) {
+        const point = App.builderState.points[pointId];
+        if (!point) return null;
+        return point.onCircle ? polarToCartesian(point.angle) : { x: point.x, y: point.y };
+    }
+
+    function handleBuilderClick(e) {
+        if (App.wasDragged) {
+            App.wasDragged = false;
+            return;
+        }
+        
+        clearTimeout(App.clickTimeout);
+        
+        App.clickTimeout = setTimeout(() => {
+            const targetId = e.target.dataset.id;
+            
+            if (e.target.matches('.point-label')) {
+                const selectionList = App.selectionState.points;
+                const index = selectionList.indexOf(targetId);
+                if (index > -1) {
+                    selectionList.splice(index, 1);
+                } else {
+                    selectionList.push(targetId);
+                }
+            } else if (targetId) {
+                const isPoint = targetId.startsWith('p');
+                const selectionList = isPoint ? App.selectionState.points : App.selectionState.features;
+                const index = selectionList.indexOf(targetId);
+                if (index > -1) {
+                    selectionList.splice(index, 1);
+                } else {
+                    selectionList.push(targetId);
+                }
+            } else if (App.activeTool === 'add_point') {
+                const svg = document.getElementById('createSvg');
+                const CTM = svg.getScreenCTM().inverse();
+                const pt = svg.createSVGPoint();
+                pt.x = e.clientX;
+                pt.y = e.clientY;
+                const coords = pt.matrixTransform(CTM);
+                const dist = Math.sqrt((coords.x - App.CX)**2 + (coords.y - App.CY)**2);
+                const onCircle = Math.abs(dist - App.R) < 25;
+                const id = `p${Date.now()}`;
+                const name = String.fromCharCode(65 + Object.keys(App.builderState.points).length - 1);
+                App.builderState.points[id] = onCircle ? 
+                    { id, name, onCircle, angle: cartesianToAngle(coords) } : 
+                    { id, name, onCircle, x: coords.x, y: coords.y };
+                App.selectionState.points.push(id);
+                App.builderHistory.push({ type: 'add', ids: [id] });
+            }
+            
+            applyToolLogic();
+            updateBuilderUI();
+        }, 200);
+    }
+
+    function handleBuilderDblClick(e) {
+        clearTimeout(App.clickTimeout);
+        App.clickTimeout = null;
+        
+        const targetId = e.target.dataset.id;
+        const targetIsPointLabel = e.target.matches('.point-label');
+        if(targetId && App.builderState.points[targetId] && targetIsPointLabel && targetId !== 'p_center'){
+            const newName = prompt("Enter new name for point:", App.builderState.points[targetId].name);
+            if(newName && newName.trim() !== '') {
+                App.builderState.points[targetId].name = newName.trim();
+                updateBuilderUI();
+            }
+        }
+    }
+
+    function handleDragStart(e) {
+        const targetId = e.target.dataset.id;
+        if (targetId && App.builderState.points[targetId]?.onCircle) {
+            App.draggedPointId = targetId;
+            App.wasDragged = false;
+            document.getElementById('createSvg').style.cursor = 'move';
+        }
+    }
+
+    function handleDrag(e) {
+        if (!App.draggedPointId) return;
+        App.wasDragged = true;
+        const svg = document.getElementById('createSvg');
+        const CTM = svg.getScreenCTM().inverse();
+        const pt = svg.createSVGPoint();
+        pt.x = e.clientX;
+        pt.y = e.clientY;
+        const coords = pt.matrixTransform(CTM);
+        App.builderState.points[App.draggedPointId].angle = cartesianToAngle(coords);
+        renderBuilder();
+    }
+
+    function handleDragEnd(e) {
+        if (App.draggedPointId) {
+            if (App.wasDragged) {
+                updateBuilderUI();
+            }
+            App.draggedPointId = null;
+            document.getElementById('createSvg').style.cursor = 'default';
+        }
+    }
+
+    function applyToolLogic() {
+        const { points, features } = App.selectionState;
+        let actionTaken = false;
+        let newIds = [];
+
+        if (App.activeTool === 'draw_tangent' && points.length === 1 && App.builderState.points[points[0]]?.onCircle) {
+            const id = `f${Date.now()}`;
+            App.builderState.features[id] = { id, type: 'TangentLine', pointId: points[0], extendBefore: true, extendAfter: true, length: 100 };
+            newIds.push(id);
+            actionTaken = true;
+        } else if (App.activeTool === 'draw_line' && points.length === 2) {
+            const id = `f${Date.now()}`;
+            App.builderState.features[id] = { id, type: 'Line', p1: points[0], p2: points[1] };
+            newIds.push(id);
+            actionTaken = true;
+        } else if (App.activeTool === 'draw_radius' && points.length === 1 && App.builderState.points[points[0]]?.onCircle) {
+            const id = `f${Date.now()}`;
+            App.builderState.features[id] = { id, type: 'Line', p1: 'p_center', p2: points[0] };
+            newIds.push(id);
+            actionTaken = true;
+        } else if (App.activeTool === 'define_arc' && points.length === 2 && points.every(id => App.builderState.points[id]?.onCircle)) {
+            const id = `f${Date.now()}`;
+            App.builderState.features[id] = { id, type: 'Arc', p1: points[0], p2: points[1], isMajor: false };
+            newIds.push(id);
+            actionTaken = true;
+        } else if (App.activeTool === 'define_angle_3pt' && points.length === 3) {
+            const [p1_id, pv_id, p2_id] = points;
+            const angle_id = `f${Date.now()}`;
+            const line1_id = `f${Date.now()+1}`;
+            const line2_id = `f${Date.now()+2}`;
+            
+            App.builderState.features[line1_id] = { id: line1_id, type: 'Line', p1: p1_id, p2: pv_id };
+            App.builderState.features[line2_id] = { id: line2_id, type: 'Line', p1: p2_id, p2: pv_id };
+            App.builderState.features[angle_id] = { id: angle_id, type: 'Angle', p1: p1_id, pv: pv_id, p2: p2_id };
+            
+            newIds.push(line1_id, line2_id, angle_id);
+            actionTaken = true;
+        }
+        
+        if(actionTaken){
+            App.builderHistory.push({ type: 'add', ids: newIds });
+            const featureIds = newIds.filter(id => id.startsWith('f'));
+            App.selectionState = { points: [], features: featureIds };
+            setActiveTool(App.activeTool);
+        }
+    }
+
+    function updateBuilderUI() {
+        const { points, features } = App.selectionState;
+        const messages = {
+            add_point: "Click to add a point. Click near the circle to snap to it. Double-click a point's label to rename it.",
+            draw_line: `Select 2 points to create a line/chord. [${points.length}/2]`,
+            draw_radius: `Select 1 point on the circle to draw a radius. [${points.length}/1]`,
+            draw_tangent: `Select 1 point on the circle to create a tangent. [${points.length}/1]`,
+            define_arc: `Select 2 points on the circle to define an arc. [${points.length}/2]`,
+            define_angle_3pt: `Select 3 points for the angle (endpoint, vertex, endpoint). [${points.length}/3]`,
+        };
+        
+        const infoEl = document.getElementById('createInfo');
+        if (infoEl) {
+            infoEl.innerHTML = `<p>${messages[App.activeTool] || "Select items to apply a tool."}</p>`;
+        }
+        
+        // Enable/disable buttons
+        const selectedFeature = App.builderState.features[features[0]];
+        document.querySelector('[data-tool="flip_arc"]').disabled = !(features.length === 1 && selectedFeature?.type === 'Arc');
+        document.querySelector('[data-tool="set_known"]').disabled = features.length !== 1;
+        document.querySelector('[data-tool="set_unknown"]').disabled = features.length !== 1;
+        document.querySelector('[data-tool="undo"]').disabled = App.builderHistory.length === 0;
+        document.querySelector('[data-tool="remove"]').disabled = points.length === 0 && features.length === 0;
+        
+        generateQuestionText();
+        renderBuilder();
+    }
+
+    function generateQuestionText() {
+        const questionBox = document.getElementById('questionBox');
+        if (!questionBox) return;
+
+        const knowns = Object.entries(App.builderState.problem.knowns);
+        const unknowns = Object.keys(App.builderState.problem.unknowns);
+
+        if (knowns.length === 0 && unknowns.length === 0) {
+            questionBox.innerHTML = 'Define knowns and unknowns to build a problem.';
+            return;
+        }
+
+        let text = '<strong>Given:</strong> ';
+        text += knowns.map(([id, data]) => {
+            return `${getFeatureName(id)} = ${data.value}${data.unit || ''}`;
+        }).join(', ') || 'None';
+
+        if (unknowns.length > 0) {
+            text += '<br><strong>Find:</strong> ';
+            text += unknowns.map(id => getFeatureName(id)).join(', ');
+        }
+        questionBox.innerHTML = text;
+    }
+
+    function getFeatureName(featureId) {
+        const feature = App.builderState.features[featureId];
+        if (!feature) return 'Feature';
+        
+        const p = (id) => App.builderState.points[id]?.name || '';
+
+        switch (feature.type) {
+            case 'Line':
+                return `Line ${p(feature.p1)}${p(feature.p2)}`;
+            case 'Angle':
+                return `∠${p(feature.p1)}${p(feature.pv)}${p(feature.p2)}`;
+            case 'Arc':
+                return `Arc ${p(feature.p1)}${p(feature.p2)}`;
+            case 'TangentLine':
+                return `Tangent at ${p(feature.pointId)}`;
+            default:
+                return feature.type;
+        }
+    }
+
+    function renderBuilder() {
+        const svg = document.getElementById('createSvg');
+        if (!svg) return;
+        svg.innerHTML = '';
+        
+        // Draw circle
+        svg.appendChild(createSvgElement('circle', {
+            cx: App.CX,
+            cy: App.CY,
+            r: App.R,
+            fill: '#f9f9f9',
+            stroke: '#e0e0e0',
+            'stroke-width': '2'
+        }));
+        
+        // Draw features
+        Object.values(App.builderState.features).forEach(f => {
+            const isSelected = App.selectionState.features.includes(f.id);
+            const pathAttrs = {
+                'data-id': f.id,
+                class: 'selectable',
+                stroke: 'var(--primary-color)',
+                'stroke-width': 3,
+                fill: 'none'
+            };
+            if(isSelected) pathAttrs.class += ' selected-outline';
+
+            if (f.type === 'Line') {
+                const p1 = getPointCoordsById(f.p1);
+                const p2 = getPointCoordsById(f.p2);
+                if (p1 && p2) {
+                    svg.appendChild(createSvgElement('line', {
+                        x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y, ...pathAttrs
+                    }));
+                }
+            } else if (f.type === 'TangentLine') {
+                const p_on_circle = getPointCoordsById(f.pointId);
+                if (!p_on_circle) return;
+                const vec_radius = { x: p_on_circle.x - App.CX, y: p_on_circle.y - App.CY };
+                const vec_tan = { x: -vec_radius.y, y: vec_radius.x };
+                const mag = Math.sqrt(vec_tan.x**2 + vec_tan.y**2);
+                if (mag === 0) return;
+                const u_tan = { x: vec_tan.x / mag, y: vec_tan.y / mag };
+                
+                const startPt = f.extendBefore ? 
+                    { x: p_on_circle.x - u_tan.x * f.length, y: p_on_circle.y - u_tan.y * f.length } : 
+                    p_on_circle;
+                const endPt = f.extendAfter ? 
+                    { x: p_on_circle.x + u_tan.x * f.length, y: p_on_circle.y + u_tan.y * f.length } : 
+                    p_on_circle;
+                
+                svg.appendChild(createSvgElement('line', {
+                    x1: startPt.x, y1: startPt.y, x2: endPt.x, y2: endPt.y, ...pathAttrs
+                }));
+            } else if (f.type === 'Arc') {
+                const p1_data = App.builderState.points[f.p1];
+                const p2_data = App.builderState.points[f.p2];
+                const p1 = getPointCoordsById(f.p1);
+                const p2 = getPointCoordsById(f.p2);
+
+                if (p1 && p2 && p1_data && p2_data) {
+                    const ccw_angle_diff = (p2_data.angle - p1_data.angle + 360) % 360;
+                    const is_ccw_path_major = ccw_angle_diff > 180;
+                    const largeArcFlag = f.isMajor ? 1 : 0;
+                    const sweepFlag = (f.isMajor === is_ccw_path_major) ? 1 : 0;
+
+                    pathAttrs.d = `M ${p1.x} ${p1.y} A ${App.R} ${App.R} 0 ${largeArcFlag} ${sweepFlag} ${p2.x} ${p2.y}`;
+                    pathAttrs.class += ' builder-arc';
+                    svg.appendChild(createSvgElement('path', pathAttrs));
+                }
+            } else if (f.type === 'Angle') {
+                const p1 = getPointCoordsById(f.p1);
+                const pv = getPointCoordsById(f.pv);
+                const p2 = getPointCoordsById(f.p2);
+                if (p1 && pv && p2) {
+                    pathAttrs.d = getAngleArcPath(pv, p1, p2, 25);
+                    if(pathAttrs.d) svg.appendChild(createSvgElement('path', pathAttrs));
+                }
+            }
+        });
+        
+        // Draw points
+        Object.values(App.builderState.points).forEach(p => {
+            if (p.isHidden) return;
+            const pos = getPointCoordsById(p.id);
+            if (!pos) return;
+            
+            const pointEl = p.onCircle ? 
+                createSvgElement('circle', { cx: pos.x, cy: pos.y, r: 8 }) : 
+                createSvgElement('rect', { x: pos.x - 6, y: pos.y - 6, width: 12, height: 12 });
+            
+            pointEl.setAttribute('fill', p.id === 'p_center' ? '#333' : 'var(--primary-color)');
+            pointEl.setAttribute('data-id', p.id);
+            pointEl.classList.add('selectable');
+            if (p.onCircle) pointEl.classList.add('draggable-point');
+            if(App.selectionState.points.includes(p.id)) pointEl.classList.add('selected-outline');
+            svg.appendChild(pointEl);
+            
+            const textEl = createSvgElement('text', {
+                x: pos.x,
+                y: pos.y - 15,
+                'text-anchor': 'middle',
+                'font-weight': 'bold',
+                fill: '#333',
+                'data-id': p.id,
+                class: 'point-label'
+            });
+            textEl.textContent = p.name;
+            svg.appendChild(textEl);
+        });
+    }
+
+    // Stub functions for missing functionality
+    function undoLastStep() {
+        const lastAction = App.builderHistory.pop();
+        if (!lastAction) return;
+        if (lastAction.type === 'add') {
+            lastAction.ids.forEach(id => {
+                delete App.builderState.points[id];
+                delete App.builderState.features[id];
+            });
+        }
+        App.selectionState = { points: [], features: [] };
+        updateBuilderUI();
+    }
+
+    function removeSelectedItems() {
+        const pointsToRemove = new Set(App.selectionState.points);
+        const featuresToRemove = new Set(App.selectionState.features);
+        
+        featuresToRemove.forEach(id => {
+            delete App.builderState.features[id];
+            delete App.builderState.problem.knowns[id];
+            delete App.builderState.problem.unknowns[id];
+        });
+        
+        pointsToRemove.forEach(id => {
+            if (id !== 'p_center') {
+                delete App.builderState.points[id];
+            }
+        });
+        
+        App.selectionState = { points: [], features: [] };
+        updateBuilderUI();
+    }
+
+    function flipSelectedArc() {
+        const arcId = App.selectionState.features[0];
+        const arc = App.builderState.features[arcId];
+        if(arc && arc.type === 'Arc') {
+            arc.isMajor = !arc.isMajor;
+            updateBuilderUI();
+        }
+    }
+
+    function setFeatureAsUnknown() {
+        const featureId = App.selectionState.features[0];
+        if (!featureId) return;
+        App.builderState.problem.unknowns[featureId] = true;
+        delete App.builderState.problem.knowns[featureId];
+        App.selectionState.features = [];
+        updateBuilderUI();
+    }
+
+    function promptForValue(featureId) {
+        const feature = App.builderState.features[featureId];
+        if (!feature) return;
+
+        let promptText, unit, defaultValue;
+        if (feature.type === 'Angle') {
+            promptText = 'Enter angle value:';
+            unit = '°';
+            defaultValue = '45';
+        } else if (feature.type === 'Line') {
+            promptText = 'Enter length for line:';
+            unit = '';
+            defaultValue = '10';
+        } else if (feature.type === 'Arc') {
+            promptText = 'Enter arc length:';
+            unit = '';
+            defaultValue = '5';
+        } else {
+            return;
+        }
+
+        const value = prompt(promptText, defaultValue);
+        if (value) {
+            const numValue = parseFloat(value);
+            if (!isNaN(numValue) && numValue > 0) {
+                App.builderState.problem.knowns[featureId] = { value: numValue, unit };
+                delete App.builderState.problem.unknowns[featureId];
+                App.selectionState.features = [];
+                updateBuilderUI();
+            }
+        }
+    }
+
+    function exportAsPNG() {
+        alert('Export PNG functionality would be implemented here');
+    }
+
+    function handleImageUpload(event) {
+        alert('Image upload functionality would be implemented here');
+    }
+
+    // Claude API functions
+    async function callClaude(prompt, base64ImageData = null) {
+        try {
+            const messages = [{
+                role: "user",
+                content: base64ImageData ? [
+                    { type: "text", text: prompt },
+                    { type: "image", source: { type: "base64", media_type: "image/png", data: base64ImageData } }
+                ] : prompt
+            }];
+
+            const response = await fetch("https://api.anthropic.com/v1/messages", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "claude-sonnet-4-20250514",
+                    max_tokens: 2000,
+                    messages: messages
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`API request failed with status ${response.status}`);
+            }
+
+            const result = await response.json();
+            
+            if (result.content && result.content.length > 0) {
+                return result.content[0].text;
+            }
+            
+            throw new Error("Could not get a clear response from Claude.");
+        } catch (error) {
+            console.error("Error calling Claude:", error);
+            throw error;
+        }
+    }
+
+    function generateProblemDescription() {
+        let description = "This is a geometry problem about a circle with a center O.\n\n";
+        description += "The following points exist:\n";
+        Object.values(App.builderState.points).forEach(p => {
+            if (p.id === 'p_center') description += `- ${p.name} is the center of the circle.\n`;
+            else if (p.onCircle) description += `- Point ${p.name} is on the circle.\n`;
+            else description += `- Point ${p.name} is outside the circle.\n`;
+        });
+
+        description += "\nThe diagram has the following features:\n";
+        Object.values(App.builderState.features).forEach(f => {
+            description += `- ${getFeatureName(f.id)}\n`;
+        });
+
+        const knowns = Object.entries(App.builderState.problem.knowns);
+        if (knowns.length > 0) {
+            description += "\nGiven the following information:\n";
+            knowns.forEach(([id, data]) => {
+                description += `- The measure of ${getFeatureName(id)} is ${data.value}${data.unit || ' units'}.\n`;
+            });
+        }
+
+        const unknowns = Object.keys(App.builderState.problem.unknowns);
+        if (unknowns.length > 0) {
+            description += "\nFind the measure of:\n";
+            unknowns.forEach(id => {
+                description += `- ${getFeatureName(id)}\n`;
+            });
+        }
+        
+        return description;
+    }
+
+    async function checkSolvability() {
+        const infoBox = document.getElementById('createInfo');
+        App.lastProblemDescription = generateProblemDescription();
+        const { knowns, unknowns } = App.builderState.problem;
+
+        if (Object.keys(knowns).length === 0 || Object.keys(unknowns).length === 0) {
+            infoBox.innerHTML = `<p style="color: var(--error-color);">You must define at least one 'known' value and one 'unknown' value to check solvability.</p>`;
+            return;
+        }
+
+        infoBox.innerHTML = `<p>🤖 Claude is analyzing the problem... please wait.</p>`;
+
+        const prompt = `
+            You are an expert high school geometry teacher. Your task is to determine if a circle geometry problem is solvable using standard theorems.
+            Here is the problem:
+            ${App.lastProblemDescription}
+            Based ONLY on the information provided, is it possible to find the value of all the 'Find' items? 
+            Please respond with a single word: 'Solvable', 'Unsolvable', or 'Partially Solvable'. 
+            Then, provide a brief, one-sentence explanation for your reasoning.
+        `;
+
+        try {
+            const aiResponseText = await callClaude(prompt);
+            
+            if (aiResponseText.toLowerCase().startsWith('solvable')) {
+                presentProblemToSolve();
+            } else {
+                infoBox.innerHTML = `<p><strong>AI Checker Result:</strong><br>${aiResponseText.replace(/\n/g, '<br>')}</p>`;
+            }
+
+        } catch (error) {
+            console.error("Error calling AI model:", error);
+            infoBox.innerHTML = `<p style="color: var(--error-color);">Error checking solvability: ${error.message}. Please check the console for details.</p>`;
+        }
+    }
+
+    function presentProblemToSolve() {
+        const infoBox = document.getElementById('createInfo');
+        const { unknowns } = App.builderState.problem;
+        
+        let inputsHTML = Object.keys(unknowns).map(id => {
+            const featureName = getFeatureName(id);
+            return `
+                <div class="angle-input" style="font-family: sans-serif;">
+                    <label for="user_answer_${id}">${featureName}</label>
+                    <input type="number" id="user_answer_${id}" placeholder="Enter value">
+                </div>
+            `;
+        }).join('');
+
+        infoBox.innerHTML = `
+            <h4 style="color: var(--primary-color); margin-bottom: 1rem;">Problem is Solvable!</h4>
+            <p style="margin-bottom: 1rem;">Based on the diagram and knowns, find the value for the following:</p>
+            <div class="input-group">${inputsHTML}</div>
+            <button class="ai-btn" id="checkUserAnswerBtn" style="margin-top: 1rem;">Check My Answer</button>
+            <div id="aiAnswerFeedback" style="margin-top: 1rem;"></div>
+        `;
+
+        document.getElementById('checkUserAnswerBtn').onclick = handleAnswerCheck;
+    }
+
+    async function handleAnswerCheck() {
+        const { unknowns } = App.builderState.problem;
+        App.lastUserAnswers = {};
+        Object.keys(unknowns).forEach(id => {
+            const input = document.getElementById(`user_answer_${id}`);
+            App.lastUserAnswers[getFeatureName(id)] = input.value;
+        });
+        
+        const feedbackDiv = document.getElementById('aiAnswerFeedback');
+        feedbackDiv.innerHTML = `<p>🤖 Claude is checking your answer...</p>`;
+
+        let userAnswersString = Object.entries(App.lastUserAnswers)
+            .map(([name, value]) => `- The user's answer for ${name} is ${value || 'not provided'}.`)
+            .join('\n');
+
+        const prompt = `
+            You are a helpful high school geometry teacher AI. A student has created a geometry problem and has attempted to solve it.
+            
+            Here is the problem description:
+            ${App.lastProblemDescription}
+
+            Here are the user's answers:
+            ${userAnswersString}
+
+            Your task is to provide a comprehensive evaluation. Structure your response in two parts under markdown headings:
+
+            ### My Solution
+            In this section, solve the problem yourself. Provide only the key steps and the final answers. Be concise and focus on the main line of reasoning and the theorems used. For example: "1. ∠AOB = 80° (Angle at center is twice angle at circumference). 2. Therefore, ∠ACB = 40°."
+
+            ### Feedback on Your Answer
+            In this section, compare your correct answers to the user's answers. State clearly whether the user's answer for each item is correct or incorrect. If any are incorrect, provide the correct answer and briefly refer back to your step-by-step solution to explain why.
+        `;
+
+        try {
+            const fullAiResponse = await callClaude(prompt);
+            App.lastAiResponse = fullAiResponse;
+            
+            const userIsCorrect = !fullAiResponse.toLowerCase().includes("incorrect");
+
+            if(userIsCorrect) {
+                feedbackDiv.innerHTML = `<p>Our answers match! It seems we are both correct.</p>`;
+            } else {
+                let mismatchMessage = "Our answers don't match. One of us may have made a mistake.";
+                const solutionSection = fullAiResponse.split("### Feedback on Your Answer")[1];
+                if (solutionSection) {
+                    const firstIncorrect = Object.keys(App.lastUserAnswers).find(key => 
+                        solutionSection.includes(key) && solutionSection.includes("incorrect"));
+                    if(firstIncorrect) {
+                        const aiAnswerRegex = new RegExp(`correct answer is (\\d+\\.?\\d*)`);
+                        const match = solutionSection.match(aiAnswerRegex);
+                        if (match && match[1]) {
+                            mismatchMessage = `Our answers for ${firstIncorrect} don't match. My calculated answer is ${match[1]}.`;
+                        }
+                    }
+                }
+                feedbackDiv.innerHTML = `<p>${mismatchMessage}</p>`;
+            }
+            
+            const challengeBtn = document.createElement('button');
+            challengeBtn.className = 'ai-btn';
+            challengeBtn.style.cssText = 'width: 100%; margin-top: 1rem; background: #8e24aa;';
+            challengeBtn.textContent = "Challenge AI / Show Solution";
+            challengeBtn.onclick = showAiSolution;
+            feedbackDiv.appendChild(challengeBtn);
+
+        } catch (error) {
+            console.error("Error calling AI model for answer check:", error);
+            feedbackDiv.innerHTML = `<p style="color: var(--error-color);">Error checking answer: ${error.message}.</p>`;
+        }
+    }
+
+    function showAiSolution() {
+        const feedbackDiv = document.getElementById('aiAnswerFeedback');
+        feedbackDiv.innerHTML = `<p><strong>Claude's Full Solution:</strong><br>${App.lastAiResponse.replace(/\n/g, '<br>')}</p>`;
+
+        const challengeBtn = document.createElement('button');
+        challengeBtn.className = 'ai-btn';
+        challengeBtn.style.cssText = 'width: 100%; margin-top: 1rem; background: #ab47bc;';
+        challengeBtn.textContent = "I still believe my answer is correct. Challenge Claude.";
+        challengeBtn.onclick = handleChallenge;
+        feedbackDiv.appendChild(challengeBtn);
+    }
+
+    function handleChallenge() {
+        const feedbackDiv = document.getElementById('aiAnswerFeedback');
+        feedbackDiv.innerHTML = `
+            <p style="margin-bottom: 0.5rem;">Please explain your reasoning below:</p>
+            <textarea id="challengeText" class="challenge-textarea" rows="4" placeholder="For example: 'I used the alternate segment theorem on chord AC...'"></textarea>
+            <button class="ai-btn" id="submitChallengeBtn" style="width: 100%; margin-top: 0.5rem;">Submit Correction to Claude</button>
+        `;
+        document.getElementById('submitChallengeBtn').onclick = submitChallenge;
+    }
+
+    async function submitChallenge() {
+        const feedbackDiv = document.getElementById('aiAnswerFeedback');
+        const userReasoning = document.getElementById('challengeText').value;
+        if (!userReasoning) {
+            alert("Please provide your reasoning.");
+            return;
+        }
+
+        feedbackDiv.innerHTML = `<p>🤖 Claude is re-evaluating based on your feedback...</p>`;
+        
+        let userAnswersString = Object.entries(App.lastUserAnswers)
+            .map(([name, value]) => `- The user's answer for ${name} is ${value || 'not provided'}.`)
+            .join('\n');
+
+        const prompt = `
+            You are a humble and expert high school geometry teacher AI. You previously evaluated a student's answer and they have challenged your conclusion. You must re-evaluate everything with an open mind, as you may have made a mistake.
+
+            **Original Problem:**
+            ${App.lastProblemDescription}
+
+            **Student's Answers:**
+            ${userAnswersString}
+
+            **Your Previous Internal Step-by-Step Solution (which you must now re-evaluate):**
+            ${App.lastAiResponse}
+
+            **The Student's Challenge and Reasoning:**
+            "${userReasoning}"
+
+            **Your Task:**
+            Carefully re-read the original problem. Critically analyze your previous step-by-step solution. Then, carefully consider the student's reasoning.
+            - If the student is correct and you were wrong, you MUST admit your mistake clearly and apologize. Then, provide the new, corrected step-by-step solution, keeping it concise and focused on the key logical steps.
+            - If the student's reasoning is flawed and your original answer was correct, politely and respectfully explain the specific error in THEIR reasoning, referencing their argument directly.
+        `;
+
+        try {
+            const aiResponseText = await callClaude(prompt);
+            feedbackDiv.innerHTML = `<p><strong>Claude's Re-evaluation:</strong><br>${aiResponseText.replace(/\n/g, '<br>')}</p>`;
+        } catch (error) {
+            console.error("Error calling AI model for re-evaluation:", error);
+            feedbackDiv.innerHTML = `<p style="color: var(--error-color);">Error during re-evaluation: ${error.message}.</p>`;
+        }
+    }
+
+    // Initialize when DOM is ready
+    document.addEventListener('DOMContentLoaded', () => {
+        // Tab event listeners
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                const tabId = e.target.dataset.tab;
+                if (tabId) {
+                    switchTab(tabId);
+                }
+            });
+        });
+        
+        // Initialize with intro tab
+        switchTab('intro');
+    });
+    </script>
+</body>
+</html>
