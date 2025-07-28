@@ -1251,7 +1251,7 @@
 
         const payload = { contents: chatHistory };
         const apiKey = ""; // API key is handled by the environment
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+        const apiUrl =`/api/gemini`;
         
         const response = await fetch(apiUrl, {
             method: 'POST',
