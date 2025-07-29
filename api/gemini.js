@@ -1,61 +1,47 @@
-// api/gemini.js - UPDATED WITH DIAGNOSTIC LOGS
+// File: /api/gemini.js (Corrected Version)
+
 export default async function handler(request, response) {
-  console.log("--- Gemini API Function Started ---");
+  // 1. We only want to handle POST requests.
+  if (request.method !== 'POST') {
+    return response.status(405).json({ error: 'Method Not Allowed' });
+  }
 
   try {
-    // 1. Get the prompt from the frontend's request.
-    const { prompt, base64ImageData } = request.body;
-    console.log("Received prompt:", prompt ? "Yes" : "No");
-    console.log("Received image data:", base64ImageData ? "Yes" : "No");
-
-    // 2. Securely get your secret API key from the server's environment variables.
+    // 2. Securely get your secret API key.
     const apiKey = process.env.GEMINI_API_KEY;
-
     if (!apiKey) {
-        console.error("FATAL ERROR: GEMINI_API_KEY environment variable not found!");
-        return response.status(500).json({ error: "Server configuration error: API key is missing." });
+      console.error("FATAL: GEMINI_API_KEY environment variable not found!");
+      return response.status(500).json({ error: "Server configuration error: API key is missing." });
     }
-    console.log(`API Key loaded: Starts with '${apiKey.substring(0, 4)}', Ends with '${apiKey.substring(apiKey.length - 4)}'`);
 
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    // You can change the model here if needed
+    const model = "gemini-1.5-flash"; // Or gemini-pro-vision, etc.
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-    // 3. Prepare the payload to send to the real Google AI API.
-    let userParts = [{ text: prompt }];
-    if (base64ImageData) {
-        userParts.push({
-            inlineData: {
-                mimeType: "image/png",
-                data: base64ImageData
-            }
-        });
-    }
-    const payload = { contents: [{ role: "user", parts: userParts }] };
-
-    // 4. Call the Google AI API from the server.
-    console.log("Calling Google AI API...");
+    // 3. Call the Google AI API, passing the EXACT body from the frontend.
     const geminiResponse = await fetch(apiUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      // The frontend already created the correct payload. We just forward it.
+      body: JSON.stringify(request.body)
     });
 
-    console.log("Google AI API response status:", geminiResponse.status, geminiResponse.statusText);
-    
+    // 4. Handle the response from Google.
     const responseData = await geminiResponse.json();
 
     if (!geminiResponse.ok) {
-        console.error("Google AI API returned an error:", responseData);
-        throw new Error(responseData.error?.message || 'Unknown error from Google AI');
+      console.error("Google AI API returned an error:", responseData);
+      const errorMessage = responseData.error?.message || 'Unknown error from Google AI';
+      return response.status(geminiResponse.status).json({ error: errorMessage });
     }
-    
-    console.log("Successfully received data from Google AI.");
 
-    // 5. Send the AI's response back to your frontend.
-    response.status(200).json(responseData);
-    console.log("--- Gemini API Function Finished Successfully ---");
+    // 5. Send the successful AI response back to your frontend.
+    return response.status(200).json(responseData);
 
   } catch (error) {
-    console.error("Error in Gemini API function:", error);
-    response.status(500).json({ error: error.message || 'Failed to call AI model' });
+    console.error("Error in the API proxy function:", error);
+    return response.status(500).json({ error: error.message || 'An unexpected error occurred.' });
   }
 }
