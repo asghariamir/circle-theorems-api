@@ -114,6 +114,14 @@
         .builder-intro-box li {
             margin-bottom: 0.25rem;
         }
+        .ai-disclaimer {
+            font-size: 0.85rem;
+            font-style: italic;
+            color: var(--dark-gray);
+            margin-top: 1rem;
+            border-top: 1px solid var(--medium-gray);
+            padding-top: 0.5rem;
+        }
         .toolbox-section {
             background-color: var(--light-gray);
             border-radius: 8px;
@@ -417,6 +425,7 @@
                     <li>Set <strong>known values</strong> and mark angles/lengths as <strong>unknowns</strong> to solve.</li>
                     <li>Use the <strong>AI Checker</strong> to verify if your problem is solvable and check your answers.</li>
                 </ul>
+                <p class="ai-disclaimer">Please note: The AI helper can make mistakes and may be temporarily unavailable during periods of high traffic.</p>
             </div>
             <div class="diagram-container"><svg viewBox="0 0 400 400" id="createSvg"></svg></div>
             
@@ -480,7 +489,9 @@
     function resetBuilderState() {
         builderState = {
             points: { 'p_center': { id: 'p_center', name: 'O', onCircle: false, x: CX, y: CY } },
-            features: {}, problem: { knowns: {}, unknowns: {} }, constraints: {},
+            features: {}, 
+            problem: { knowns: {}, unknowns: {}, additionalGivens: [] }, 
+            constraints: {},
         };
         builderHistory.length = 0;
         selectionState = { points: [], features: [] };
@@ -720,7 +731,7 @@
 
         if (!p_extend_from || !p_other) return;
 
-        const vec = { x: p_extend_from.x - p_other.x, y: p_extend_from.y - p_other.y };
+        const vec = { x: p_extend_from.x - p_other.x, y: p_other.y - p_other.y };
         const mag = Math.sqrt(vec.x**2 + vec.y**2);
         const u_vec = { x: vec.x / mag, y: vec.y / mag };
 
@@ -1034,10 +1045,14 @@
 
 
         const knowns = Object.entries(builderState.problem.knowns);
-        if (knowns.length > 0) {
+        const additionalGivens = builderState.problem.additionalGivens || [];
+        if (knowns.length > 0 || additionalGivens.length > 0) {
             description += "\nGiven the following information:\n";
             knowns.forEach(([id, data]) => {
                 description += `- The measure of ${getFeatureName(id)} is ${data.value}${data.unit || ' units'}.\n`;
+            });
+            additionalGivens.forEach(given => {
+                description += `- ${given}\n`;
             });
         } else {
             description += "\nThere is no given information.\n";
@@ -1270,26 +1285,63 @@
         infoBox.innerHTML = `<p>🤖 AI is re-evaluating solvability based on your feedback...</p>`;
 
         const prompt = `
-            You are a humble and expert high school geometry teacher AI. You previously assessed a problem as unsolvable or partially solvable, and a student has challenged your conclusion. You must re-evaluate everything with an open mind, as you may have missed a theorem or a logical step.
-
-            **Original Problem Description:**
+            You are a humble and expert high school geometry teacher AI. You previously assessed a problem as unsolvable. A student has challenged you, providing new reasoning.
+            **Original Problem:**
             ${lastProblemDescription}
-
-            **Your Previous Assessment and Reasoning:**
+            **Your Previous Assessment:**
             "${lastAiResponse}"
-
-            **The Student's Challenge and Reasoning:**
+            **The Student's New Reasoning:**
             "${userReasoning}"
 
             **Your Task:**
-            Carefully re-read the original problem and the student's reasoning.
-            - If the student's reasoning is correct and the problem IS solvable, you MUST admit your mistake clearly and apologize. Explain the key step you missed. Then, confirm that the problem is solvable.
-            - If the student's reasoning is flawed and your original assessment was correct, politely and respectfully explain the specific error in THEIR reasoning. Reaffirm why the problem is not fully solvable with the given information.
+            Analyze the student's new reasoning.
+            1. Is the problem now solvable with this new information?
+            2. If it is now solvable, what is the key piece of new information the user provided? (e.g., "Angle ABC is a right angle", "Line DE is parallel to BC").
+
+            Respond ONLY with a JSON object in the following format. Do not add any other text or explanation outside the JSON block.
+
+            If now solvable:
+            \`\`\`json
+            {
+              "isSolvable": true,
+              "newInformation": "A concise statement of the new fact provided by the user."
+            }
+            \`\`\`
+
+            If still not solvable:
+            \`\`\`json
+            {
+              "isSolvable": false,
+              "reason": "A single, polite sentence explaining why the student's reasoning is incorrect or insufficient."
+            }
+            \`\`\`
         `;
 
         try {
-            const aiResponseText = await callGemini(prompt);
-            infoBox.innerHTML = `<p><strong>AI Re-evaluation:</strong><br>${aiResponseText.replace(/\n/g, '<br>')}</p>`;
+            let jsonResponse = await callGemini(prompt);
+            const jsonMatch = jsonResponse.match(/```json\s*([\s\S]*?)\s*```/);
+            if (!jsonMatch || !jsonMatch[1]) {
+                throw new Error("AI did not return a valid JSON response for the solvability challenge.");
+            }
+            const parsedData = JSON.parse(jsonMatch[1]);
+
+            if (parsedData.isSolvable) {
+                // If the AI agrees, add the new info to the problem statement and present the solving fields
+                if (parsedData.newInformation) {
+                    builderState.problem.additionalGivens.push(parsedData.newInformation);
+                    generateQuestionText(); // Update the displayed question
+                }
+                presentProblemToSolve();
+            } else {
+                // If the AI disagrees, show the reason and offer another chance to challenge
+                infoBox.innerHTML = `<p><strong>AI Re-evaluation:</strong><br>${parsedData.reason}</p>`;
+                const challengeBtn = document.createElement('button');
+                challengeBtn.className = 'tool-btn';
+                challengeBtn.style.cssText = 'width: 100%; text-align: center; margin-top: 1rem; border-color: var(--highlight-color); color: var(--highlight-color);';
+                challengeBtn.textContent = "Provide More Information";
+                challengeBtn.onclick = handleSolvabilityChallenge;
+                infoBox.appendChild(challengeBtn);
+            }
         } catch (error) {
             console.error("Error calling AI model for solvability re-evaluation:", error);
             infoBox.innerHTML = `<p style="color: var(--error-color);">Error during re-evaluation: ${error.message}.</p>`;
@@ -1297,7 +1349,7 @@
     }
     
     async function callGemini(prompt, base64ImageData = null) {
-        // Using an absolute URL to avoid parsing errors in certain environments.
+        // This relative URL is the standard and most robust method for deployed web apps.
         const apiUrl = '/api/gemini';
 
         let userParts = [{ text: prompt }];
@@ -1494,16 +1546,20 @@
 
         const knowns = Object.entries(builderState.problem.knowns);
         const unknowns = Object.keys(builderState.problem.unknowns);
+        const additionalGivens = builderState.problem.additionalGivens || [];
 
-        if (knowns.length === 0 && unknowns.length === 0) {
+        if (knowns.length === 0 && unknowns.length === 0 && additionalGivens.length === 0) {
             questionBox.innerHTML = 'Define knowns and unknowns to build a problem.';
             return;
         }
 
         let text = '<strong>Given:</strong> ';
-        text += knowns.map(([id, data]) => {
+        let givens = knowns.map(([id, data]) => {
             return `${getFeatureName(id)} = ${data.value}${data.unit || ''}`;
-        }).join(', ') || 'None';
+        });
+        givens = givens.concat(additionalGivens);
+
+        text += givens.join(', ') || 'None';
 
         if (unknowns.length > 0) {
             text += '<br><strong>Find:</strong> ';
@@ -1737,3 +1793,4 @@
     </script>
 </body>
 </html>
+
