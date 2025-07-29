@@ -453,6 +453,7 @@
                          <button class="tool-btn" data-tool="tangent_from_point">─ Tangent from Point</button>
                         <button class="tool-btn" data-tool="draw_perpendicular">⊥ Draw Perpendicular</button>
                         <button class="tool-btn" data-tool="draw_parallel">∥ Draw Parallel</button>
+                        <button class="tool-btn" data-tool="mark_collinear">↔️ Mark Collinear</button>
                         <button class="tool-btn" data-tool="define_angle_vtx">∠ Angle (from Vtx/Lines)</button>
                     </div>
                 </div>
@@ -872,6 +873,12 @@
             const id = `c${Date.now()}`;
             builderState.constraints[id] = {id, type: 'perpendicular', f1: features[0], f2: features[1]};
             newIds.push(id); actionTaken = true;
+        } else if (activeTool === 'mark_collinear' && points.length >= 3) {
+            const id = `c${Date.now()}`;
+            // Create a copy of the points array for the constraint
+            builderState.constraints[id] = {id, type: 'collinear', points: [...points]};
+            newIds.push(id);
+            actionTaken = true;
         }
         
         if(actionTaken){
@@ -1012,6 +1019,19 @@
         Object.values(builderState.features).forEach(f => {
             description += `- ${getFeatureName(f.id)}\n`;
         });
+        
+        const constraints = Object.values(builderState.constraints);
+        if (constraints.length > 0) {
+            description += "\nThe diagram has the following constraints:\n";
+            constraints.forEach(c => {
+                if (c.type === 'collinear') {
+                    const pointNames = c.points.map(pId => builderState.points[pId]?.name).join(', ');
+                    description += `- The points ${pointNames} are collinear (lie on the same straight line).\n`;
+                }
+                // Add other constraint types here (parallel, perpendicular, etc.)
+            });
+        }
+
 
         const knowns = Object.entries(builderState.problem.knowns);
         if (knowns.length > 0) {
@@ -1121,47 +1141,31 @@
             Here are the user's answers:
             ${userAnswersString}
 
-            Your task is to provide a comprehensive evaluation. Structure your response in two parts under markdown headings:
+            Your task is to solve the problem yourself. Provide only the key steps and the final answers. Be concise and focus on the main line of reasoning and the theorems used. For example: "1. ∠AOB = 80° (Angle at center is twice angle at circumference). 2. Therefore, ∠ACB = 40°."
 
-            ### My Solution
-            In this section, solve the problem yourself. Provide only the key steps and the final answers. Be concise and focus on the main line of reasoning and the theorems used. For example: "1. ∠AOB = 80° (Angle at center is twice angle at circumference). 2. Therefore, ∠ACB = 40°."
-
-            ### Feedback on Your Answer
-            In this section, compare your correct answers to the user's answers. State clearly whether the user's answer for each item is correct or incorrect. If any are incorrect, provide the correct answer and briefly refer back to your step-by-step solution to explain why.
+            After your solution, compare your final answers to the user's answers internally. Then, on a new line, add ONE of the following tags and nothing else:
+            - If all the user's answers match yours: [CORRECT]
+            - If any of the user's answers do not match yours: [INCORRECT]
         `;
 
         try {
             const fullAiResponse = await callGemini(prompt);
             lastAiResponse = fullAiResponse; // Store the full reasoning
             
-            // Now, determine the short message to show the user
-            const userIsCorrect = !fullAiResponse.toLowerCase().includes("incorrect");
+            const userIsCorrect = fullAiResponse.includes("[CORRECT]");
+            const solutionText = fullAiResponse.split("[")[0].trim();
 
             if(userIsCorrect) {
-                feedbackDiv.innerHTML = `<p>Our answers match! It seems we are both correct.</p>`;
+                feedbackDiv.innerHTML = `<p style="color: var(--success-color);">🎉 Correct! Your answers match the AI's solution.</p>`;
             } else {
-                 // Find the first incorrect answer to be more specific
-                let mismatchMessage = "Our answers don't match. One of us may have made a mistake.";
-                const solutionSection = fullAiResponse.split("### Feedback on Your Answer")[1];
-                if (solutionSection) {
-                    const firstIncorrect = Object.keys(lastUserAnswers).find(key => solutionSection.includes(key) && solutionSection.includes("incorrect"));
-                    if(firstIncorrect) {
-                        // A bit of regex to find the AI's answer for the incorrect item
-                        const aiAnswerRegex = new RegExp(`correct answer is (\\d+\\.?\\d*)`);
-                        const match = solutionSection.match(aiAnswerRegex);
-                        if (match && match[1]) {
-                             mismatchMessage = `Our answers for ${firstIncorrect} don't match. My calculated answer is ${match[1]}.`
-                        }
-                    }
-                }
-                feedbackDiv.innerHTML = `<p>${mismatchMessage}</p>`;
+                feedbackDiv.innerHTML = `<p style="color: var(--error-color);">Our answers don't seem to match. One of us may have made a mistake.</p>`;
             }
             
             const challengeBtn = document.createElement('button');
             challengeBtn.className = 'tool-btn';
             challengeBtn.style.cssText = 'width: 100%; text-align: center; margin-top: 1rem; border-color: var(--highlight-color); color: var(--highlight-color);';
-            challengeBtn.textContent = "Challenge AI / Show Solution";
-            challengeBtn.onclick = showAiSolution;
+            challengeBtn.textContent = "Show AI's Full Solution";
+            challengeBtn.onclick = () => showAiSolution(solutionText); // Pass only the solution part
             feedbackDiv.appendChild(challengeBtn);
 
         } catch (error) {
@@ -1170,9 +1174,10 @@
         }
     }
 
-    function showAiSolution() {
+    function showAiSolution(solutionText) {
         const feedbackDiv = document.getElementById('aiAnswerFeedback');
-        feedbackDiv.innerHTML = `<p><strong>AI's Full Solution:</strong><br>${lastAiResponse.replace(/\n/g, '<br>')}</p>`;
+        // The "### My Solution" heading is removed from the prompt, so no need to strip it.
+        feedbackDiv.innerHTML = `<p><strong>AI's Full Solution:</strong><br>${solutionText.replace(/\n/g, '<br>')}</p>`;
 
         const challengeBtn = document.createElement('button');
         challengeBtn.className = 'tool-btn';
@@ -1216,7 +1221,7 @@
             ${userAnswersString}
 
             **Your Previous Internal Step-by-Step Solution (which you must now re-evaluate):**
-            ${lastAiResponse}
+            ${lastAiResponse.split("[")[0].trim()}
 
             **The Student's Challenge and Reasoning:**
             "${userReasoning}"
@@ -1237,9 +1242,7 @@
     }
     
     async function callGemini(prompt, base64ImageData = null) {
-        // IMPORTANT: When deploying, change this URL to your Vercel/Netlify function
-        // e.g., const apiUrl = `/api/gemini`;
-        const apiKey = "";
+        // This relative URL points to the Vercel serverless function.
         const apiUrl = '/api/gemini';
 
         let userParts = [{ text: prompt }];
@@ -1384,6 +1387,7 @@
             tangent_from_point: `Select 1 point outside the circle to construct tangents. [${points.length}/1]`,
             draw_perpendicular: `Select 1 line and 1 point to draw a perpendicular line through. [${features.length}/1, ${points.length}/1]`,
             draw_parallel: `Select 1 line and 1 point to draw a parallel line through. [${features.length}/1, ${points.length}/1]`,
+            mark_collinear: `Select 3 or more points to mark as collinear. [${points.length}/3+]`,
             extend_line: `Select a line and one of its endpoints to extend it. [${features.length}/1, ${points.length}/1]`,
             mark_equal: `Select 2 features (lines or arcs). [${features.length}/2]`,
             mark_parallel: `Select 2 lines. [${features.length}/2]`,
@@ -1458,6 +1462,36 @@
         if (!svg) return;
         svg.innerHTML = '';
         svg.appendChild(createSvgElement('circle', { cx: CX, cy: CY, r: R, fill: '#f9f9f9', stroke: '#e0e0e0', 'stroke-width': '2' }));
+        
+        // Render Collinear Constraints first (as background lines)
+        Object.values(builderState.constraints).forEach(c => {
+            if (c.type === 'collinear' && c.points.length >= 2) {
+                const coords = c.points.map(pId => getPointCoordsById(pId)).filter(Boolean);
+                if (coords.length < 2) return;
+
+                // Find the two extreme points to define the line segment
+                let minXPoint = coords[0], maxXPoint = coords[0];
+                coords.forEach(p => {
+                    if (p.x < minXPoint.x) minXPoint = p;
+                    if (p.x > maxXPoint.x) maxXPoint = p;
+                });
+
+                // Extend the line slightly for better visibility
+                const vec = { x: maxXPoint.x - minXPoint.x, y: maxXPoint.y - minXPoint.y };
+                const mag = Math.sqrt(vec.x**2 + vec.y**2);
+                const uVec = { x: vec.x / mag, y: vec.y / mag };
+                
+                const p1 = { x: minXPoint.x - uVec.x * 20, y: minXPoint.y - uVec.y * 20 };
+                const p2 = { x: maxXPoint.x + uVec.x * 20, y: maxXPoint.y + uVec.y * 20 };
+
+                svg.appendChild(createSvgElement('line', {
+                    x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y,
+                    stroke: 'var(--dark-gray)', 'stroke-width': 1.5, 'stroke-dasharray': '5,5',
+                    opacity: 0.6
+                }));
+            }
+        });
+
 
         Object.values(builderState.features).forEach(f => {
             const isSelected = selectionState.features.includes(f.id);
