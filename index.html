@@ -1079,11 +1079,19 @@
 
         try {
             const aiResponseText = await callGemini(prompt);
+            lastAiResponse = aiResponseText; // Store the initial assessment
             
             if (aiResponseText.toLowerCase().startsWith('solvable')) {
                 presentProblemToSolve();
             } else {
                 infoBox.innerHTML = `<p><strong>AI Checker Result:</strong><br>${aiResponseText.replace(/\n/g, '<br>')}</p>`;
+                
+                const challengeBtn = document.createElement('button');
+                challengeBtn.className = 'tool-btn';
+                challengeBtn.style.cssText = 'width: 100%; text-align: center; margin-top: 1rem; border-color: var(--highlight-color); color: var(--highlight-color);';
+                challengeBtn.textContent = "Challenge AI's Assessment";
+                challengeBtn.onclick = handleSolvabilityChallenge;
+                infoBox.appendChild(challengeBtn);
             }
 
         } catch (error) {
@@ -1240,10 +1248,57 @@
             feedbackDiv.innerHTML = `<p style="color: var(--error-color);">Error during re-evaluation: ${error.message}.</p>`;
         }
     }
+
+    function handleSolvabilityChallenge() {
+        const infoBox = document.getElementById('createInfo');
+        infoBox.innerHTML = `
+            <p style="font-family: sans-serif; margin-bottom: 0.5rem;">Please explain why you believe the problem is solvable:</p>
+            <textarea id="solvabilityChallengeText" class="challenge-textarea" rows="4" placeholder="For example: 'The problem is solvable because if you extend line AB to point D...'"></textarea>
+            <button id="submitSolvabilityChallengeBtn" class="tool-btn active" style="width: 100%; text-align: center; margin-top: 0.5rem;">Submit Challenge to AI</button>
+        `;
+        document.getElementById('submitSolvabilityChallengeBtn').onclick = submitSolvabilityChallenge;
+    }
+
+    async function submitSolvabilityChallenge() {
+        const infoBox = document.getElementById('createInfo');
+        const userReasoning = document.getElementById('solvabilityChallengeText').value;
+        if (!userReasoning) {
+            alert("Please provide your reasoning.");
+            return;
+        }
+
+        infoBox.innerHTML = `<p>🤖 AI is re-evaluating solvability based on your feedback...</p>`;
+
+        const prompt = `
+            You are a humble and expert high school geometry teacher AI. You previously assessed a problem as unsolvable or partially solvable, and a student has challenged your conclusion. You must re-evaluate everything with an open mind, as you may have missed a theorem or a logical step.
+
+            **Original Problem Description:**
+            ${lastProblemDescription}
+
+            **Your Previous Assessment and Reasoning:**
+            "${lastAiResponse}"
+
+            **The Student's Challenge and Reasoning:**
+            "${userReasoning}"
+
+            **Your Task:**
+            Carefully re-read the original problem and the student's reasoning.
+            - If the student's reasoning is correct and the problem IS solvable, you MUST admit your mistake clearly and apologize. Explain the key step you missed. Then, confirm that the problem is solvable.
+            - If the student's reasoning is flawed and your original assessment was correct, politely and respectfully explain the specific error in THEIR reasoning. Reaffirm why the problem is not fully solvable with the given information.
+        `;
+
+        try {
+            const aiResponseText = await callGemini(prompt);
+            infoBox.innerHTML = `<p><strong>AI Re-evaluation:</strong><br>${aiResponseText.replace(/\n/g, '<br>')}</p>`;
+        } catch (error) {
+            console.error("Error calling AI model for solvability re-evaluation:", error);
+            infoBox.innerHTML = `<p style="color: var(--error-color);">Error during re-evaluation: ${error.message}.</p>`;
+        }
+    }
     
     async function callGemini(prompt, base64ImageData = null) {
-        // This relative URL points to the Vercel serverless function.
-        const apiUrl = '/api/gemini';
+        // Using an absolute URL to avoid parsing errors in certain environments.
+        const apiUrl = 'https://circle-theorems-api.vercel.app/api/gemini';
 
         let userParts = [{ text: prompt }];
         if (base64ImageData) {
