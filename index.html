@@ -1237,7 +1237,11 @@
     }
     
     async function callGemini(prompt, base64ImageData = null) {
-        let chatHistory = [];
+        // IMPORTANT: When deploying, change this URL to your Vercel/Netlify function
+        // e.g., const apiUrl = `/api/gemini`;
+        const apiKey = "";
+        const apiUrl = '/api/gemini';
+
         let userParts = [{ text: prompt }];
         if (base64ImageData) {
             userParts.push({
@@ -1247,12 +1251,11 @@
                 }
             });
         }
-        chatHistory.push({ role: "user", parts: userParts });
-
-        const payload = { contents: chatHistory };
-        const apiKey = ""; // API key is handled by the environment
-        const apiUrl =`/api/gemini`;
         
+        const payload = { 
+            contents: [{ role: "user", parts: userParts }]
+        };
+
         const response = await fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1261,7 +1264,7 @@
 
         if (!response.ok) {
             const errorBody = await response.text();
-            console.error("AI API Error Response:", errorBody);
+            console.error("API Error Response:", errorBody);
             throw new Error(`API request failed with status ${response.status}: ${response.statusText}`);
         }
 
@@ -1316,6 +1319,7 @@
                 // Clean the response to extract only the JSON
                 const jsonMatch = jsonResponse.match(/```json\s*([\s\S]*?)\s*```/);
                 if (!jsonMatch || !jsonMatch[1]) {
+                    console.error("Raw AI Response:", jsonResponse);
                     throw new Error("AI did not return a valid JSON code block.");
                 }
                 jsonResponse = jsonMatch[1];
