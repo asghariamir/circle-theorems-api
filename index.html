@@ -1298,7 +1298,7 @@
     
     async function callGemini(prompt, base64ImageData = null) {
         // Using an absolute URL to avoid parsing errors in certain environments.
-        const apiUrl = 'https://circle-theorems-api.vercel.app/api/gemini';
+        const apiUrl = '/api/gemini';
 
         let userParts = [{ text: prompt }];
         if (base64ImageData) {
