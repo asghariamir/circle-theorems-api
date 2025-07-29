@@ -1,4 +1,4 @@
-// File: /api/gemini.js (Corrected Version)
+// Corrected code for: /api/gemini.js
 
 export default async function handler(request, response) {
   // 1. We only want to handle POST requests.
@@ -7,25 +7,25 @@ export default async function handler(request, response) {
   }
 
   try {
-    // 2. Securely get your secret API key.
+    // 2. Securely get your secret API key from server environment variables.
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       console.error("FATAL: GEMINI_API_KEY environment variable not found!");
       return response.status(500).json({ error: "Server configuration error: API key is missing." });
     }
 
-    // You can change the model here if needed
-    const model = "gemini-1.5-flash"; // Or gemini-pro-vision, etc.
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    // This is the model you are using on the frontend.
+    // The model in the URL must match the one the payload is for.
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=${apiKey}`;
 
     // 3. Call the Google AI API, passing the EXACT body from the frontend.
+    //    The frontend already created the correct payload. We just forward it.
     const geminiResponse = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      // The frontend already created the correct payload. We just forward it.
-      body: JSON.stringify(request.body)
+      body: JSON.stringify(request.body) // Pass the entire original body
     });
 
     // 4. Handle the response from Google.
