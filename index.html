@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<link rel="icon" href="/logo-mathswell-square-mirror.ico" type="image/x-icon">
+<link rel="icon" href="/logo-mathswell-square-mirror.svg" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Circle Theorems - Interactive App</title>
@@ -218,10 +220,51 @@
 
         @media (max-width: 900px) { .main-layout { grid-template-columns: 1fr; } .diagram-container { position: static; } }
     </style>
+     <!-- Mathswell favicon -->
+
+<!-- Mathswell app navbar styles -->
+<style>
+  .mathswell-nav {
+    display: flex;
+    justify-content: center;
+    margin: .4rem 0 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+  }
+  .mathswell-nav .mw-link {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 1rem;
+    color: #0f766e;
+    padding: .3rem .7rem;
+    border-radius: 999px;
+    background: rgba(255,255,255,.9);
+    box-shadow: 0 1px 4px rgba(0,0,0,.08);
+  }
+  .mathswell-nav .mw-link img {
+    display: block;
+  }
+</style>
 </head>
 <body>
     <div class="container">
         <h1>Circle Theorems Interactive</h1>
+         <!-- Mathswell brand badge -->
+<div style="display:flex;justify-content:center;margin:.75rem 0 1rem;
+            position:relative;z-index:1001;">
+  <a href="/" style="display:inline-flex;align-items:center;gap:.5rem;
+      text-decoration:none;font-weight:800;font-size:1.05rem;color:#0f766e;
+      padding:.4rem .8rem;border-radius:999px;background:#fff;
+      box-shadow:0 1px 4px rgba(0,0,0,.08);">
+    <img src="/logo-mathswell-square-mirror.svg" alt="Mathswell" width="28" height="28" style="display:block">
+    <span>MATHSWELL</span>
+  </a>
+</div>
+       
         <div class="tabs">
             <button class="tab active" data-tab="intro">Introduction</button>
             <button class="tab" data-tab="practice">Practice Problems</button>
