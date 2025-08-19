@@ -1,24 +1,20 @@
-(() => {
-  const API = 'https://ai.mathswell.com/api/visitors';
-  const NS  = 'mathswell';
-  const KEY = 'circles';                // <-- different key
-  const OUT = document.getElementById('visitor-count-circles');
-  const DATE_KEY = 'mw_circles_last_hit_date';
+// counter.js
+(async () => {
+  const el = document.getElementById('visitor-count');
+  if (!el) return;
 
-  function show(val) { OUT && (OUT.textContent = (val ?? '—')); }
+  // Pick a key per app/page
+  const key = el.dataset.key || 'landing';    // e.g. landing, circles, logic
+  const ns  = 'mathswell';                    // your namespace
 
-  const today = new Date().toISOString().slice(0,10);
-  const mode = (localStorage.getItem(DATE_KEY) === today) ? 'get' : 'hit';
+  const endpoint = `https://ai.mathswell.com/api/visitors?ns=${encodeURIComponent(ns)}&key=${encodeURIComponent(key)}&mode=hit`;
 
-  fetch(`${API}?ns=${encodeURIComponent(NS)}&key=${encodeURIComponent(KEY)}&mode=${mode}`)
-    .then(r => r.json())
-    .then(d => {
-      if (typeof d.value === 'number') {
-        show(d.value.toLocaleString());
-        if (mode === 'hit') localStorage.setItem(DATE_KEY, today);
-      } else {
-        show('—');
-      }
-    })
-    .catch(() => show('—'));
+  try {
+    const r = await fetch(endpoint, { method: 'GET' });
+    const j = await r.json();
+    if (typeof j.value === 'number') el.textContent = j.value.toLocaleString();
+    else el.textContent = '—';
+  } catch {
+    el.textContent = '—';
+  }
 })();
