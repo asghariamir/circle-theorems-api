@@ -1855,7 +1855,7 @@
   // Circles runs under ai.mathswell.com; relative path is fine here
   var url = '/api/visitors?ns=mathswell&key=circles&mode=' + mode;
 
-  fetch(url, { cache: 'no-store' })
+  fetch('/api/visitors?ns=mathswell&key=circles&mode=' + mode, { cache: 'no-store' })
     .then(r => r.json())
     .then(j => {
       if (typeof j.value === 'number') {
