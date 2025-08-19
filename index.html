@@ -1834,6 +1834,33 @@
         switchTab('intro');
     });
     </script>
+    <!-- Footer counter (Circle Theorems) -->
+<p style="text-align:center;margin:0.75rem 0;">
+  <span class="counter" style="display:inline-flex;align-items:center;gap:.45rem;padding:.35rem .6rem;border-radius:999px;background:#e6fffb;border:1px solid #bdebe3;color:#0f766e;font-weight:700;">
+    Visitors (Circle Theorems): <span id="visitor-count-circles">…</span>
+  </span>
+</p>
+
+<script>
+(function(){
+  const NAMESPACE = 'ai.mathswell.com';
+  const KEY = 'circles'; // per-app bucket
+  const today = new Date().toISOString().slice(0,10);
+  const LS_KEY = `mw_last_${NAMESPACE}_${KEY}`;
+  const already = localStorage.getItem(LS_KEY) === today;
+  const mode = already ? 'get' : 'hit';
+
+  fetch(`https://ai.mathswell.com/api/visitors?ns=${encodeURIComponent(NAMESPACE)}&key=${encodeURIComponent(KEY)}&mode=${mode}`)
+    .then(r => r.json())
+    .then(d => {
+      const v = (d && typeof d.value === 'number') ? d.value : null;
+      document.getElementById('visitor-count-circles').textContent = (v!=null) ? v.toLocaleString() : '—';
+      if (!already) localStorage.setItem(LS_KEY, today);
+    })
+    .catch(() => { document.getElementById('visitor-count-circles').textContent = '—'; });
+})();
+</script>
+
 </body>
 </html>
 
