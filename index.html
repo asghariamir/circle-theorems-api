@@ -1848,19 +1848,19 @@
   const today = new Date().toISOString().slice(0,10);
   const LS = 'mw_circles_last';
   const mode = (localStorage.getItem(LS) === today) ? 'get' : 'hit';
+
   fetch(`https://ai.mathswell.com/api/visitors?ns=mathswell&key=circles&mode=${mode}`, { cache: 'no-store' })
     .then(r => r.json())
     .then(j => {
       if (typeof j.value === 'number') {
         el.textContent = j.value.toLocaleString();
         if (mode === 'hit') localStorage.setItem(LS, today);
-      } else {
-        el.textContent = '—';
       }
     })
-    .catch(() => { el.textContent = '—'; });
+    .catch(() => {});
 })();
 </script>
+
 
 
 
