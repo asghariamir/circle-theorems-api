@@ -1834,38 +1834,42 @@
         switchTab('intro');
     });
     </script>
- <footer>
+    <footer>
   <p style="text-align:center;margin:0.75rem 0;">
-  <span class="counter" style="display:inline-flex;align-items:center;gap:.45rem;padding:.35rem .6rem;border-radius:999px;background:#e6fffb;border:1px solid #bdebe3;color:#0f766e;font-weight:700;">
-    Visitors (Circles): <span id="visitor-count" data-key="circles">…</span>
-  </span>
-</p>
-<script defer src="./counter.js"></script>
-
+    <span class="counter"
+          style="display:inline-flex;align-items:center;gap:.45rem;padding:.35rem .6rem;border-radius:999px;background:#e6fffb;border:1px solid #bdebe3;color:#0f766e;font-weight:700;">
+      Visitors (Circles): <span id="visitor-count-circles">…</span>
+    </span>
+  </p>
 </footer>
 
 <script>
-(() => {
-  const el = document.getElementById('visitor-count-circles');
-  const today = new Date().toISOString().slice(0,10);
-  const LS = 'mw_circles_last';
-  const mode = (localStorage.getItem(LS) === today) ? 'get' : 'hit';
+(function () {
+  var el = document.getElementById('visitor-count-circles');
+  if (!el) return;
 
-  fetch(`https://ai.mathswell.com/api/visitors?ns=mathswell&key=circles&mode=${mode}`, { cache: 'no-store' })
+  var today = new Date().toISOString().slice(0, 10);
+  var LS = 'mw_circles_last';
+  var mode = (localStorage.getItem(LS) === today) ? 'get' : 'hit';
+
+  // Circles runs under ai.mathswell.com; relative path is fine here
+  var url = '/api/visitors?ns=mathswell&key=circles&mode=' + mode;
+
+  fetch(url, { cache: 'no-store' })
     .then(r => r.json())
     .then(j => {
       if (typeof j.value === 'number') {
         el.textContent = j.value.toLocaleString();
         if (mode === 'hit') localStorage.setItem(LS, today);
+      } else {
+        el.textContent = '—';
       }
     })
-    .catch(() => {});
+    .catch(() => { el.textContent = '—'; });
 })();
 </script>
 
-<script>window.mwCounterKey='circles'; window.mwCounterLabel='Visitors (Circles)';</script>
-<script defer src="/counter.js"></script> <!-- or https://ai.mathswell.com/counter.js -->
-
+ 
 
 </body>
 </html>
