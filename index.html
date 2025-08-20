@@ -1835,40 +1835,9 @@
     });
     </script>
     <footer>
-  <p style="text-align:center;margin:0.75rem 0;">
-    <span class="counter"
-          style="display:inline-flex;align-items:center;gap:.45rem;padding:.35rem .6rem;border-radius:999px;background:#e6fffb;border:1px solid #bdebe3;color:#0f766e;font-weight:700;">
-      Visitors (Circles): <span id="visitor-count-circles">…</span>
-    </span>
-  </p>
-</footer>
+  <p>&copy; 2025 Mathswell.</p>
 
-<script>
-(function () {
-  var el = document.getElementById('visitor-count-circles');
-  if (!el) return;
-
-  var today = new Date().toISOString().slice(0, 10);
-  var LS = 'mw_circles_last';
-  var mode = (localStorage.getItem(LS) === today) ? 'get' : 'hit';
-
-  // Circles runs under ai.mathswell.com; relative path is fine here
-  var url = '/api/visitors?ns=mathswell&key=circles&mode=' + mode;
-
-  fetch('/api/visitors?ns=mathswell&key=circles&mode=' + mode, { cache: 'no-store' })
-    .then(r => r.json())
-    .then(j => {
-      if (typeof j.value === 'number') {
-        el.textContent = j.value.toLocaleString();
-        if (mode === 'hit') localStorage.setItem(LS, today);
-      } else {
-        el.textContent = '—';
-      }
-    })
-    .catch(() => { el.textContent = '—'; });
-})();
-</script>
-
+  </footer>
  
 
 </body>
